@@ -10,6 +10,8 @@ import { resolveVideoStreamUrl, waitForVideoReady } from '../lib/video';
 export function VideoPlayer({ name, identifier, onEnded }: { name: string; identifier: string; onEnded?: () => void }) {
   const c = useColors();
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const autoPlayNextRef = useRef(false);
   const [src, setSrc] = useState<string | null>(null);
   const [statusLabel, setStatusLabel] = useState('Loading…');
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +40,25 @@ export function VideoPlayer({ name, identifier, onEnded }: { name: string; ident
 
     return () => { cancelled = true; };
   }, [name, identifier]);
+
+  // Resume playback automatically when a new src loads because the previous
+  // video just ended (playlist auto-advance) - a continuation of playback the
+  // user already started, which browsers generally permit even under strict
+  // autoplay policies (unlike a bare `autoPlay` attribute on first load,
+  // which Qortium Home's iframe Permissions Policy blocks - see the earlier
+  // fix that removed it). Not set for a fresh/manual navigation to a video.
+  useEffect(() => {
+    if (!src || !autoPlayNextRef.current) return;
+    autoPlayNextRef.current = false;
+    videoRef.current?.play().catch(() => {});
+  }, [src]);
+
+  function handleEnded() {
+    if (onEnded) {
+      autoPlayNextRef.current = true;
+      onEnded();
+    }
+  }
 
   useEffect(() => {
     function onFsChange() {
@@ -73,10 +94,11 @@ export function VideoPlayer({ name, identifier, onEnded }: { name: string; ident
     >
       {src ? (
         <video
+          ref={videoRef}
           src={src}
           controls
           playsInline
-          onEnded={onEnded}
+          onEnded={handleEnded}
           style={{ width: '100%', height: '100%', display: 'block', backgroundColor: '#000' }}
         />
       ) : (

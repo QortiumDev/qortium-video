@@ -86,6 +86,14 @@ export function addVideoToPayload(payload: PlaylistPayload, ref: PlaylistVideoRe
   return { ...payload, videoRefs: [...payload.videoRefs, ref], updatedAt: Date.now() };
 }
 
+export function removeVideoFromPayload(payload: PlaylistPayload, ref: PlaylistVideoRef): PlaylistPayload {
+  return {
+    ...payload,
+    videoRefs: payload.videoRefs.filter((r) => !(r.name === ref.name && r.identifier === ref.identifier)),
+    updatedAt: Date.now(),
+  };
+}
+
 export async function publishPlaylist(ownerName: string, payload: PlaylistPayload): Promise<unknown> {
   return qdnRequest({
     action: 'PUBLISH_QDN_RESOURCE',

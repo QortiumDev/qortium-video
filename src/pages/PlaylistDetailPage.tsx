@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Box, Button, CircularProgress, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, IconButton, Typography } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useColors } from '../theme/ColorTokensContext';
 import { tokens } from '../theme/tokens';
 import { thumbnailUrl } from '../lib/video';
-import { loadPlaylist, type Playlist } from '../lib/playlists';
-import { fetchResourceMetadata } from '../api/qortal';
+import { loadPlaylist, publishPlaylist, removeVideoFromPayload, type Playlist, type PlaylistVideoRef } from '../lib/playlists';
+import { fetchResourceMetadata, getUserAccount } from '../api/qortal';
 
 export function PlaylistDetailPage() {
   const c = useColors();
@@ -15,6 +16,9 @@ export function PlaylistDetailPage() {
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
   const [titles, setTitles] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [accountName, setAccountName] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -36,12 +40,31 @@ export function PlaylistDetailPage() {
     return () => { cancelled = true; };
   }, [name, identifier]);
 
+  useEffect(() => {
+    getUserAccount().then((a) => setAccountName(a.name)).catch(() => {});
+  }, []);
+
   function playFrom(index: number) {
     if (!playlist) return;
     const ref = playlist.payload.videoRefs[index];
     navigate(`/watch/${encodeURIComponent(ref.name)}/${encodeURIComponent(ref.identifier)}`, {
       state: { playlistTitle: playlist.payload.title, refs: playlist.payload.videoRefs, index },
     });
+  }
+
+  async function removeVideo(ref: PlaylistVideoRef) {
+    if (!playlist || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const updated = removeVideoFromPayload(playlist.payload, ref);
+      await publishPlaylist(playlist.ownerName, updated);
+      setPlaylist({ ...playlist, payload: updated });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not remove this video.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress sx={{ color: c.accent }} /></Box>;
@@ -62,16 +85,28 @@ export function PlaylistDetailPage() {
         </Button>
       )}
 
+      {error && <Typography sx={{ fontSize: '0.78rem', color: c.error, mb: 1.5 }}>{error}</Typography>}
+
       {playlist.payload.videoRefs.map((ref, i) => (
         <Box key={`${ref.name}-${ref.identifier}`} onClick={() => playFrom(i)} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1, cursor: 'pointer', borderBottom: `${tokens.shape.borderWidth} solid ${c.borderLight}` }}>
           <Typography sx={{ fontSize: '0.75rem', color: c.textSecondary, width: 20, textAlign: 'right' }}>{i + 1}</Typography>
           <Box component="img" src={thumbnailUrl(ref.name, ref.identifier)} alt="" sx={{ width: 96, aspectRatio: '16 / 9', objectFit: 'cover', borderRadius: `${tokens.shape.radiusSm}px`, bgcolor: c.borderLight }} onError={(e) => { (e.target as HTMLImageElement).style.visibility = 'hidden'; }} />
-          <Box sx={{ minWidth: 0 }}>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
             <Typography sx={{ fontSize: '0.82rem', fontWeight: tokens.typography.weightBold, color: c.textPrimary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {titles[`${ref.name}:${ref.identifier}`] || ref.identifier}
             </Typography>
             <Typography sx={{ fontSize: '0.7rem', color: c.textSecondary }}>{ref.name}</Typography>
           </Box>
+          {accountName === playlist.ownerName && (
+            <IconButton
+              size="small"
+              disabled={busy}
+              onClick={(e) => { e.stopPropagation(); void removeVideo(ref); }}
+              sx={{ color: c.textSecondary, '&:hover': { color: c.error } }}
+            >
+              <DeleteOutlineIcon fontSize="small" />
+            </IconButton>
+          )}
         </Box>
       ))}
     </Box>
