@@ -3,6 +3,8 @@ import { TopBar } from '../components/layout/TopBar';
 import { HomePage } from '../pages/HomePage';
 import { WatchPage } from '../pages/WatchPage';
 import { UploadPage } from '../pages/UploadPage';
+import { PlaylistsPage } from '../pages/PlaylistsPage';
+import { PlaylistDetailPage } from '../pages/PlaylistDetailPage';
 import { useIframe } from '../hooks/useIframeListener';
 
 const _startRoute = new URLSearchParams(window.location.search).get('_route');
@@ -21,6 +23,8 @@ const router = createHashRouter([
       { index: true, element: <HomePage /> },
       { path: 'watch/:name/:identifier', element: <WatchPage /> },
       { path: 'upload', element: <UploadPage /> },
+      { path: 'playlists', element: <PlaylistsPage /> },
+      { path: 'playlist/:name/:identifier', element: <PlaylistDetailPage /> },
     ],
   },
 ]);
