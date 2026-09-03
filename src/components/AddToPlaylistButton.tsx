@@ -1,5 +1,5 @@
 import { useEffect, useState, type MouseEvent } from 'react';
-import { Box, Button, CircularProgress, Menu, MenuItem, TextField } from '@mui/material';
+import { Button, CircularProgress, Menu, MenuItem, TextField } from '@mui/material';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import { useColors } from '../theme/ColorTokensContext';
 import { getUserAccount } from '../api/qortal';
