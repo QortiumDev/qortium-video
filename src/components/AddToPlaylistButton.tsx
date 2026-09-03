@@ -26,6 +26,9 @@ export function AddToPlaylistButton({ videoName, videoIdentifier }: { videoName:
     setLoading(false);
   }
 
+  // Republishes the whole payload from the snapshot loaded when the menu opened -
+  // a concurrent edit to the same playlist from another session would be silently
+  // overwritten (last-write-wins, no conflict detection). Acceptable for now.
   async function addTo(playlist: Playlist) {
     if (busy) return;
     setBusy(true);
@@ -71,7 +74,7 @@ export function AddToPlaylistButton({ videoName, videoIdentifier }: { videoName:
               {p.payload.title}
             </MenuItem>
           )),
-          <MenuItem key="__new" disableRipple sx={{ display: 'flex', gap: 1 }} onKeyDown={(e) => e.stopPropagation()}>
+          <MenuItem key="__new" disableRipple sx={{ display: 'flex', gap: 1 }} onKeyDown={(e) => { if (e.key !== 'Escape') e.stopPropagation(); }}>
             <TextField
               size="small" placeholder="New playlist…" value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)} onClick={(e) => e.stopPropagation()}
