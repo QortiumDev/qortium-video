@@ -2,6 +2,7 @@ import { createHashRouter, RouterProvider, Outlet } from 'react-router-dom';
 import { TopBar } from '../components/layout/TopBar';
 import { HomePage } from '../pages/HomePage';
 import { WatchPage } from '../pages/WatchPage';
+import { UploadPage } from '../pages/UploadPage';
 import { useIframe } from '../hooks/useIframeListener';
 
 const _startRoute = new URLSearchParams(window.location.search).get('_route');
@@ -19,6 +20,7 @@ const router = createHashRouter([
     children: [
       { index: true, element: <HomePage /> },
       { path: 'watch/:name/:identifier', element: <WatchPage /> },
+      { path: 'upload', element: <UploadPage /> },
     ],
   },
 ]);
