@@ -5,6 +5,7 @@ import { WatchPage } from '../pages/WatchPage';
 import { UploadPage } from '../pages/UploadPage';
 import { PlaylistsPage } from '../pages/PlaylistsPage';
 import { PlaylistDetailPage } from '../pages/PlaylistDetailPage';
+import { ChannelPage } from '../pages/ChannelPage';
 import { useIframe } from '../hooks/useIframeListener';
 
 const _startRoute = new URLSearchParams(window.location.search).get('_route');
@@ -25,6 +26,7 @@ const router = createHashRouter([
       { path: 'upload', element: <UploadPage /> },
       { path: 'playlists', element: <PlaylistsPage /> },
       { path: 'playlist/:name/:identifier', element: <PlaylistDetailPage /> },
+      { path: 'channel/:name', element: <ChannelPage /> },
     ],
   },
 ]);
