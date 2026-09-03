@@ -36,7 +36,15 @@ export function VideoPlayer({ name, identifier, onEnded }: { name: string; ident
     })
       .then(() => { if (cancelled) return null; return resolveVideoStreamUrl(name, identifier); })
       .then((url) => { if (!cancelled && url) setSrc(url); })
-      .catch((e) => { if (!cancelled) setError(e instanceof Error ? e.message : 'Could not load this video.'); });
+      .catch((e) => {
+        if (cancelled) return;
+        // This load attempt never reached a src, so the auto-play effect below
+        // (keyed on src) will never fire to consume a flag armed by the
+        // previous video's onEnded - clear it here instead, or it would leak
+        // an unsolicited autoplay onto whatever video loads successfully next.
+        autoPlayNextRef.current = false;
+        setError(e instanceof Error ? e.message : 'Could not load this video.');
+      });
 
     return () => { cancelled = true; };
   }, [name, identifier]);

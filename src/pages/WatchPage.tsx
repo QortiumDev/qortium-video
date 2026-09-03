@@ -44,7 +44,11 @@ export function WatchPage() {
     <Box sx={{ pt: `calc(var(--video-top-bar-height, ${tokens.spacing.topBarHeight}px) + 24px)`, pb: 4, px: { xs: 2, md: 4 }, maxWidth: 1400, mx: 'auto' }}>
       <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <VideoPlayer name={name} identifier={identifier} onEnded={state ? () => goToPlaylistIndex(state.index + 1) : undefined} />
+          <VideoPlayer
+            name={name}
+            identifier={identifier}
+            onEnded={state && state.index + 1 < state.refs.length ? () => goToPlaylistIndex(state.index + 1) : undefined}
+          />
 
           <Typography sx={{ fontSize: '1.1rem', fontWeight: tokens.typography.weightBold, color: c.textPrimary, mt: 2 }}>
             {meta?.title || identifier}
