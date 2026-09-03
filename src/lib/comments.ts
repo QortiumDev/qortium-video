@@ -128,6 +128,16 @@ export async function loadCommentsForVideo(videoName: string, videoIdentifier: s
   const resolved = await Promise.all(
     list.filter(isRecord).map((r) => toCommentResource(r as Record<string, unknown>)),
   );
+
+  // Drop cache entries for resources no longer returned (deleted/aged out) so the
+  // cache stays bounded to the live result set.
+  const liveKeys = new Set(list.filter(isRecord).map((r) => getString(r.identifier)));
+  for (const key of commentCache.keys()) {
+    if (!liveKeys.has(key)) {
+      commentCache.delete(key);
+    }
+  }
+
   return resolved
     .filter((c): c is CommentResource => !!c)
     .filter((c) => c.payload.videoName === videoName && c.payload.videoIdentifier === videoIdentifier)
