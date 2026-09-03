@@ -74,8 +74,13 @@ export function CommentThread({ videoName, videoIdentifier }: { videoName: strin
 
   async function refresh() {
     setLoading(true);
-    setComments(await loadCommentsForVideo(videoName, videoIdentifier));
-    setLoading(false);
+    try {
+      setComments(await loadCommentsForVideo(videoName, videoIdentifier));
+    } catch {
+      setComments([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
