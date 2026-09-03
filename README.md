@@ -1,8 +1,7 @@
-# Qortium Gallery
+# Qortium Video
 
-A network-wide image feed Q-App for the Qortium ecosystem. Browse every IMAGE
-resource published on QDN, sorted newest or oldest, searchable by publisher or
-keyword.
+A video publishing and playback Q-App for the Qortium ecosystem. Upload, watch,
+rate, comment on, and organize videos into playlists, published as QDN resources.
 
 Built to be forked — see [Naming](#naming) below.
 
@@ -34,7 +33,7 @@ theme/token provider path intact, and verify both styles with `npm run build`.
 The name this app publishes under is set in `src/apps.ts`:
 
 ```ts
-gallery: { qdn: 'Gallery', label: 'Gallery' },
+video: { qdn: 'Video', label: 'Video' },
 ```
 
 Change `qdn` to whatever name you've registered on your network, then publish under that name. Update the same registry entry in any other apps that link to this one.
