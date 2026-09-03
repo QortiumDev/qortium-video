@@ -1,5 +1,6 @@
 import { createHashRouter, RouterProvider, Outlet } from 'react-router-dom';
 import { TopBar } from '../components/layout/TopBar';
+import { HomePage } from '../pages/HomePage';
 import { useIframe } from '../hooks/useIframeListener';
 
 const _startRoute = new URLSearchParams(window.location.search).get('_route');
@@ -15,7 +16,7 @@ const router = createHashRouter([
     path: '/',
     element: <Layout />,
     children: [
-      { index: true, element: <div style={{ padding: 24 }}>Home - coming soon</div> },
+      { index: true, element: <HomePage /> },
     ],
   },
 ]);
