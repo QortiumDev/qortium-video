@@ -15,6 +15,7 @@ export function PlaylistsPage() {
   const [loading, setLoading] = useState(true);
   const [newTitle, setNewTitle] = useState('');
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function refresh(name: string) {
     setLoading(true);
@@ -33,10 +34,13 @@ export function PlaylistsPage() {
   async function create() {
     if (!accountName || !newTitle.trim() || busy) return;
     setBusy(true);
+    setError(null);
     try {
       await publishPlaylist(accountName, createPlaylistPayload(newTitle, ''));
       setNewTitle('');
       await refresh(accountName);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not create the playlist.');
     } finally {
       setBusy(false);
     }
@@ -45,9 +49,12 @@ export function PlaylistsPage() {
   async function remove(playlist: Playlist) {
     if (!accountName || busy) return;
     setBusy(true);
+    setError(null);
     try {
       await deletePlaylist(accountName, playlist.identifier);
       await refresh(accountName);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not delete the playlist.');
     } finally {
       setBusy(false);
     }
@@ -69,6 +76,8 @@ export function PlaylistsPage() {
               Create
             </Button>
           </Box>
+
+          {error && <Typography sx={{ fontSize: '0.78rem', color: c.error, mb: 1.5 }}>{error}</Typography>}
 
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={20} sx={{ color: c.accent }} /></Box>

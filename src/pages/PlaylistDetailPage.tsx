@@ -17,8 +17,10 @@ export function PlaylistDetailPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
     loadPlaylist(name, identifier).then(async (p) => {
+      if (cancelled) return;
       setPlaylist(p);
       if (p) {
         const entries = await Promise.all(
@@ -27,10 +29,11 @@ export function PlaylistDetailPage() {
             return [`${ref.name}:${ref.identifier}`, meta?.title || ref.identifier] as const;
           }),
         );
-        setTitles(Object.fromEntries(entries));
+        if (!cancelled) setTitles(Object.fromEntries(entries));
       }
-      setLoading(false);
+      if (!cancelled) setLoading(false);
     });
+    return () => { cancelled = true; };
   }, [name, identifier]);
 
   function playFrom(index: number) {
