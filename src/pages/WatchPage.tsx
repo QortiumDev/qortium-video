@@ -24,8 +24,10 @@ export function WatchPage() {
   const [meta, setMeta] = useState<{ title?: string; description?: string } | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     setMeta(null);
-    fetchResourceMetadata('VIDEO', name, identifier).then(setMeta);
+    fetchResourceMetadata('VIDEO', name, identifier).then((m) => { if (!cancelled) setMeta(m); });
+    return () => { cancelled = true; };
   }, [name, identifier]);
 
   if (!name || !identifier) return null;
