@@ -18,21 +18,47 @@ export function ChannelPage() {
   const [videos, setVideos] = useState<QdnResource[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
+  const [followBusy, setFollowBusy] = useState(false);
+  const [followError, setFollowError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
     Promise.all([
       listResources({ service: 'VIDEO', name, limit: 100 }),
       loadOwnPlaylists(name),
-    ]).then(([v, p]) => {
-      setVideos(v);
-      setPlaylists(p);
-      setLoading(false);
-    });
+    ])
+      .then(([v, p]) => {
+        if (cancelled) return;
+        setVideos(v);
+        setPlaylists(p);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setVideos([]);
+        setPlaylists([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
   }, [name]);
 
   const pattern = resourcePatterns('VIDEO', name, undefined).byName;
   const followed = listsLoaded && isFollowed(pattern);
+
+  async function toggleFollow() {
+    if (followBusy) return;
+    setFollowBusy(true);
+    setFollowError(null);
+    try {
+      await (followed ? unfollow(pattern) : follow(pattern));
+    } catch (e) {
+      setFollowError(e instanceof Error ? e.message : 'Could not update follow status.');
+    } finally {
+      setFollowBusy(false);
+    }
+  }
 
   return (
     <Box sx={{ pt: `calc(var(--video-top-bar-height, ${tokens.spacing.topBarHeight}px) + 24px)`, pb: 4, px: { xs: 2, md: 4 }, maxWidth: 1400, mx: 'auto' }}>
@@ -40,7 +66,8 @@ export function ChannelPage() {
         <Typography sx={{ fontWeight: tokens.typography.weightBlack, fontSize: '1.4rem', color: c.textPrimary }}>{name}</Typography>
         <Button
           variant={followed ? 'outlined' : 'contained'} disableElevation
-          onClick={() => void (followed ? unfollow(pattern) : follow(pattern))}
+          disabled={followBusy}
+          onClick={() => void toggleFollow()}
           sx={followed
             ? { borderColor: c.accent, color: c.accent, borderRadius: '50px', px: 2.5 }
             : { bgcolor: c.accent, color: c.accentText, borderRadius: '50px', px: 2.5, '&:hover': { bgcolor: c.accentHover } }}
@@ -48,6 +75,8 @@ export function ChannelPage() {
           {followed ? 'Following' : 'Follow'}
         </Button>
       </Box>
+
+      {followError && <Typography sx={{ fontSize: '0.78rem', color: c.error, mb: 1.5 }}>{followError}</Typography>}
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}><CircularProgress size={24} sx={{ color: c.accent }} /></Box>
