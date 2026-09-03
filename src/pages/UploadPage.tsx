@@ -24,16 +24,24 @@ export function UploadPage() {
 
   async function pickVideo() {
     setError(null);
-    const res = await selectPublishSource('file');
-    if (res.canceled) return;
-    setVideoSource({ fileName: res.fileName, sourceToken: res.sourceToken });
+    try {
+      const res = await selectPublishSource('file');
+      if (res.canceled) return;
+      setVideoSource({ fileName: res.fileName, sourceToken: res.sourceToken });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not open the file picker.');
+    }
   }
 
   async function pickThumbnail() {
     setError(null);
-    const res = await selectPublishSource('file');
-    if (res.canceled) return;
-    setThumbnailSource({ fileName: res.fileName, sourceToken: res.sourceToken });
+    try {
+      const res = await selectPublishSource('file');
+      if (res.canceled) return;
+      setThumbnailSource({ fileName: res.fileName, sourceToken: res.sourceToken });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not open the file picker.');
+    }
   }
 
   async function publish() {
@@ -62,12 +70,19 @@ export function UploadPage() {
       });
 
       if (thumbnailSource?.sourceToken) {
-        await publishResource({
-          service: 'THUMBNAIL',
-          name: account.name,
-          identifier,
-          sourceToken: thumbnailSource.sourceToken,
-        });
+        try {
+          await publishResource({
+            service: 'THUMBNAIL',
+            name: account.name,
+            identifier,
+            sourceToken: thumbnailSource.sourceToken,
+          });
+        } catch {
+          // The video itself already published successfully - a thumbnail failure
+          // isn't fatal (the app already degrades gracefully with no thumbnail), so
+          // don't block navigation or risk the user resubmitting and creating an
+          // orphaned duplicate video with a new identifier.
+        }
       }
 
       navigate(`/watch/${encodeURIComponent(account.name)}/${encodeURIComponent(identifier)}`);
