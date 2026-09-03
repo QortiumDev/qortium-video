@@ -32,8 +32,8 @@ export function VideoPlayer({ name, identifier, onEnded }: { name: string; ident
         }
       },
     })
-      .then(() => resolveVideoStreamUrl(name, identifier))
-      .then((url) => { if (!cancelled) setSrc(url); })
+      .then(() => { if (cancelled) return null; return resolveVideoStreamUrl(name, identifier); })
+      .then((url) => { if (!cancelled && url) setSrc(url); })
       .catch((e) => { if (!cancelled) setError(e instanceof Error ? e.message : 'Could not load this video.'); });
 
     return () => { cancelled = true; };
@@ -50,11 +50,13 @@ export function VideoPlayer({ name, identifier, onEnded }: { name: string; ident
   async function toggleFullscreen() {
     const el = containerRef.current;
     if (!el) return;
-    if (document.fullscreenElement) {
-      await document.exitFullscreen();
-    } else {
-      await el.requestFullscreen();
-    }
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await el.requestFullscreen();
+      }
+    } catch {}
   }
 
   return (
@@ -73,7 +75,7 @@ export function VideoPlayer({ name, identifier, onEnded }: { name: string; ident
         <video
           src={src}
           controls
-          autoPlay
+          playsInline
           onEnded={onEnded}
           style={{ width: '100%', height: '100%', display: 'block', backgroundColor: '#000' }}
         />
