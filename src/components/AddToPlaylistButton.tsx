@@ -1,4 +1,4 @@
-import { useEffect, useState, type MouseEvent } from 'react';
+import { useState, type MouseEvent } from 'react';
 import { Button, CircularProgress, Menu, MenuItem, TextField } from '@mui/material';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import { useColors } from '../theme/ColorTokensContext';
@@ -14,16 +14,22 @@ export function AddToPlaylistButton({ videoName, videoIdentifier }: { videoName:
   const [newTitle, setNewTitle] = useState('');
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    getUserAccount().then((a) => setAccountName(a.name)).catch(() => {});
-  }, []);
-
+  // Resolve the account fresh on every open, rather than relying on a
+  // mount-time fetch - if the menu is opened before that mount-time fetch
+  // resolves (very plausible right after navigating to a fresh watch page),
+  // the old code fell back to "Select an account first" and never retried,
+  // even though an account was genuinely selected - the menu just never
+  // showed any playlists until reopened later.
   async function open(e: MouseEvent<HTMLElement>) {
     setAnchor(e.currentTarget);
-    if (!accountName) return;
     setLoading(true);
-    setPlaylists(await loadOwnPlaylists(accountName));
-    setLoading(false);
+    try {
+      const account = await getUserAccount().catch(() => ({ address: '', name: null }));
+      setAccountName(account.name);
+      setPlaylists(account.name ? await loadOwnPlaylists(account.name) : []);
+    } finally {
+      setLoading(false);
+    }
   }
 
   // Republishes the whole payload from the snapshot loaded when the menu opened -
