@@ -73,9 +73,13 @@ async function fetchCommentPayload(name: string, identifier: string): Promise<Co
       identifier,
       maxBytes: MAX_COMMENT_BYTES,
     });
-    const text = typeof value === 'string' ? value : '';
-    if (!text) return null;
-    return normalizePayload(JSON.parse(text));
+    // FETCH_QDN_RESOURCE auto-parses JSON-shaped content into an object before
+    // returning it (Home's parseResponseData detects `{`/`[` bodies and calls
+    // JSON.parse itself) - it does NOT hand back the raw string in that case.
+    // Only parse ourselves when it genuinely came back as a string.
+    const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+    if (!parsed) return null;
+    return normalizePayload(parsed);
   } catch { return null; }
 }
 

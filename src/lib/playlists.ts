@@ -141,9 +141,12 @@ export async function loadPlaylist(ownerName: string, identifier: string): Promi
       identifier,
       maxBytes: 200_000,
     });
-    const text = typeof value === 'string' ? value : '';
-    if (!text) return null;
-    const payload = normalizePayload(JSON.parse(text));
+    // FETCH_QDN_RESOURCE auto-parses JSON-shaped content into an object before
+    // returning it (Home's parseResponseData detects `{`/`[` bodies and calls
+    // JSON.parse itself) - it does NOT hand back the raw string in that case.
+    // Only parse ourselves when it genuinely came back as a string.
+    const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+    const payload = normalizePayload(parsed);
     if (!payload) return null;
     return { identifier, ownerName, payload };
   } catch { return null; }
