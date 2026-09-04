@@ -1,16 +1,18 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useAtomValue } from 'jotai';
-import { Box, IconButton, Tooltip } from '@mui/material';
+import { useAtom, useAtomValue } from 'jotai';
+import { Alert, Box, IconButton, Snackbar, Tooltip } from '@mui/material';
 import MovieIcon from '@mui/icons-material/Movie';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import PlaylistPlayIcon from '@mui/icons-material/PlaylistPlay';
+import DownloadForOfflineIcon from '@mui/icons-material/DownloadForOffline';
+import DownloadForOfflineOutlinedIcon from '@mui/icons-material/DownloadForOfflineOutlined';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import PersonRemoveAlt1Icon from '@mui/icons-material/PersonRemoveAlt1';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useColors } from '../../theme/ColorTokensContext';
 import { tokens } from '../../theme/tokens';
-import { uiStyleAtom } from '../../state/atoms';
+import { PRELOAD_NEXT_STORAGE_KEY, preloadNextEnabledAtom, uiStyleAtom } from '../../state/atoms';
 import { RatingControl } from './RatingControl';
 import { AppIcon, getOwnQdnName } from './AppIdentity';
 
@@ -31,6 +33,8 @@ export function TopBar() {
   const headerRef = useRef<HTMLElement | null>(null);
   const [isFollowed, setIsFollowed] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);
+  const [preloadNext, setPreloadNext] = useAtom(preloadNextEnabledAtom);
+  const [preloadToastOpen, setPreloadToastOpen] = useState(false);
   const isClassic = uiStyle === 'classic';
 
   useEffect(() => {
@@ -80,6 +84,13 @@ export function TopBar() {
     void qdnRequest({ action: 'OPEN_NEW_TAB', address: `qdn://APP/Help/Help?new=${APP_QDN_NAME}` });
   }
 
+  function handleTogglePreloadNext() {
+    const next = !preloadNext;
+    setPreloadNext(next);
+    try { localStorage.setItem(PRELOAD_NEXT_STORAGE_KEY, String(next)); } catch {}
+    setPreloadToastOpen(true);
+  }
+
   const buttonSx = {
     borderRadius: `${isClassic ? tokens.shape.radiusMd : tokens.shape.radius}px`,
     minWidth: 44,
@@ -93,6 +104,7 @@ export function TopBar() {
   };
 
   return (
+    <>
     <Box
       component="header"
       ref={headerRef}
@@ -183,6 +195,16 @@ export function TopBar() {
         gridColumn: isClassic ? { xs: 2, sm: 'auto' } : 'auto',
         gridRow: isClassic ? { xs: 1, sm: 'auto' } : 'auto',
       }}>
+        <Tooltip title={preloadNext ? 'Preload next video: On' : 'Preload next video: Off'} placement="bottom">
+          <IconButton
+            size="small"
+            onClick={handleTogglePreloadNext}
+            sx={{ ...buttonSx, color: preloadNext ? c.accent : c.textSecondary }}
+          >
+            {preloadNext ? <DownloadForOfflineIcon fontSize="small" /> : <DownloadForOfflineOutlinedIcon fontSize="small" />}
+          </IconButton>
+        </Tooltip>
+
         <RatingControl qdnName={APP_QDN_NAME} identifier={APP_QDN_IDENTIFIER} />
 
         <Tooltip title={isFollowed ? 'Stop following this app' : 'Follow this app'} placement="bottom">
@@ -203,5 +225,19 @@ export function TopBar() {
         </Tooltip>
       </Box>
     </Box>
+
+    <Snackbar
+      open={preloadToastOpen}
+      autoHideDuration={5000}
+      onClose={() => setPreloadToastOpen(false)}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+    >
+      <Alert onClose={() => setPreloadToastOpen(false)} severity="info" variant="filled" sx={{ width: '100%' }}>
+        {preloadNext
+          ? 'Preload next video is on. The likely next video downloads in the background while you watch - uses more data.'
+          : 'Preload next video is off.'}
+      </Alert>
+    </Snackbar>
+    </>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Box, IconButton, Typography } from '@mui/material';
+import { useAtomValue } from 'jotai';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
 import { useColors } from '../theme/ColorTokensContext';
@@ -11,6 +12,8 @@ import { CommentThread } from '../components/CommentThread';
 import { UpNextList } from '../components/UpNextList';
 import { AddToPlaylistButton } from '../components/AddToPlaylistButton';
 import { fetchResourceMetadata } from '../api/qortal';
+import { triggerVideoPreload } from '../lib/video';
+import { preloadNextEnabledAtom } from '../state/atoms';
 import type { PlaylistVideoRef } from '../lib/playlists';
 
 type WatchState = { playlistTitle: string; refs: PlaylistVideoRef[]; index: number } | undefined;
@@ -21,6 +24,7 @@ export function WatchPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const state = location.state as WatchState;
+  const preloadNext = useAtomValue(preloadNextEnabledAtom);
   const [meta, setMeta] = useState<{ title?: string; description?: string } | null>(null);
 
   useEffect(() => {
@@ -29,6 +33,15 @@ export function WatchPage() {
     fetchResourceMetadata('VIDEO', name, identifier).then((m) => { if (!cancelled) setMeta(m); });
     return () => { cancelled = true; };
   }, [name, identifier]);
+
+  // Preload the specific next track in the current playlist - a stronger,
+  // more certain signal than Up Next's generic top-rated pick (which
+  // UpNextList preloads on its own when this setting is on).
+  useEffect(() => {
+    if (!preloadNext || !state) return;
+    const next = state.refs[state.index + 1];
+    if (next) void triggerVideoPreload(next.name, next.identifier);
+  }, [preloadNext, state]);
 
   if (!name || !identifier) return null;
 

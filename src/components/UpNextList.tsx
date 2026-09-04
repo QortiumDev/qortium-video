@@ -1,22 +1,32 @@
 import { useEffect, useState } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
+import { useAtomValue } from 'jotai';
 import { useNavigate } from 'react-router-dom';
 import { useColors } from '../theme/ColorTokensContext';
 import { tokens } from '../theme/tokens';
-import { fetchUpNext, thumbnailUrl, type RankedVideo } from '../lib/video';
+import { fetchUpNext, thumbnailUrl, triggerVideoPreload, type RankedVideo } from '../lib/video';
+import { preloadNextEnabledAtom } from '../state/atoms';
 
 export function UpNextList({ currentName, currentIdentifier }: { currentName: string; currentIdentifier: string }) {
   const c = useColors();
   const navigate = useNavigate();
+  const preloadNext = useAtomValue(preloadNextEnabledAtom);
   const [items, setItems] = useState<RankedVideo[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetchUpNext(currentName, currentIdentifier).then((r) => { if (!cancelled) { setItems(r); setLoading(false); } });
+    fetchUpNext(currentName, currentIdentifier).then((r) => {
+      if (cancelled) return;
+      setItems(r);
+      setLoading(false);
+      if (preloadNext && r.length > 0) {
+        void triggerVideoPreload(r[0].resource.name, r[0].resource.identifier);
+      }
+    });
     return () => { cancelled = true; };
-  }, [currentName, currentIdentifier]);
+  }, [currentName, currentIdentifier, preloadNext]);
 
   return (
     <Box>

@@ -45,6 +45,20 @@ export async function resolveVideoStreamUrl(name: string, identifier: string): P
   return getResourceStreamUrl(VIDEO_SERVICE, name, identifier);
 }
 
+// Best-effort nudge to make Core start pulling a video's data from peers
+// ahead of time (same tiny-maxBytes trick waitForVideoReady's failure-path
+// documents elsewhere in this codebase), so it's more likely to already be
+// local by the time the user actually advances to it. Opt-in only - gated
+// behind the preload-next-video setting - and silently ignores failures,
+// since this is purely a background optimization, never a user-facing action.
+export async function triggerVideoPreload(name: string, identifier: string): Promise<void> {
+  try {
+    await qdnRequest({ action: 'FETCH_QDN_RESOURCE', service: VIDEO_SERVICE, name, identifier, maxBytes: 1 });
+  } catch {
+    // best-effort only
+  }
+}
+
 export type RankedVideo = { resource: QdnResource; rating: number | null };
 
 // Ranks a bounded candidate set by community rating (descending), ties broken

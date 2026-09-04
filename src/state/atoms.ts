@@ -32,3 +32,18 @@ export const accountAtom = atom<{ address: string; name: string | null } | null>
 export const blockedQdnAtom      = atom<string[]>([]);
 export const followedQdnAtom     = atom<string[]>([]);
 export const qdnListsLoadedAtom  = atom<boolean>(false);
+
+// Preload-next-video preference (device-local, off by default, persisted across
+// sessions via localStorage rather than a URL param since it's a user choice,
+// not a Home-driven display setting).
+export const PRELOAD_NEXT_STORAGE_KEY = 'qortium-video:preloadNext';
+
+function readStoredPreloadNext(): boolean {
+  try {
+    return localStorage.getItem(PRELOAD_NEXT_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export const preloadNextEnabledAtom = atom<boolean>(readStoredPreloadNext());
